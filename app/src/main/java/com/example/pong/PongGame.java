@@ -160,7 +160,7 @@ public class PongGame extends SurfaceView implements Runnable {
 
         // Realisticish bounce
             mBall.batBounce(mBat.getRect());
-            //mBall.increaseVelocity();
+            mBall.increaseVelocity();
 
             float a = mBat.getRect().left ;
             float b = mBat.getRect().right ;
@@ -202,7 +202,7 @@ public class PongGame extends SurfaceView implements Runnable {
         // Right
         if(mBall.getRect().right > mScreenX){
             mBall.reverseXVelocity();
-            //mBall.increaseVelocity();
+            mBall.increaseVelocity();
             mScore-=5;
         }
     }
