@@ -5,8 +5,10 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.graphics.RectF;
 
 public class PongGame extends SurfaceView implements Runnable {
 
@@ -46,6 +48,7 @@ public class PongGame extends SurfaceView implements Runnable {
     private volatile boolean mPlaying;
     private boolean mPaused = true;
 
+
     // The PongGame constructor
     public PongGame(Context context, int x, int y) {
 
@@ -68,6 +71,11 @@ public class PongGame extends SurfaceView implements Runnable {
 
         // Initialize the bat and ball
         mBall = new Ball(mScreenX);
+
+        // Initialize the bat and ball
+        mBall = new Ball(mScreenX);
+        mBat = new Bat(mScreenX, mScreenY);
+
         startNewGame();
 
     }
@@ -77,7 +85,7 @@ public class PongGame extends SurfaceView implements Runnable {
         // Put the ball back to the starting position
         // Reset the score and the player's chances
         mScore = 0;
-        mLives = 3;
+        mLives = 100;
         // Put the ball back to the starting position
         mBall.reset(mScreenX, mScreenY);
     }
@@ -89,7 +97,10 @@ public class PongGame extends SurfaceView implements Runnable {
                 mPaint.setColor(Color.argb(255, 255, 255, 255));
                 mPaint.setTextSize(mFontSize);
                 mCanvas.drawText("Score: " + mScore + " Lives: " + mLives, mFontMargin, mFontSize, mPaint);
+                // Draw the ball
                 mCanvas.drawRect(mBall.getRect(), mPaint);
+                // Draw the bat
+                mCanvas.drawRect(mBat.getRect(), mPaint);
                 if (DEBUGGING) {
                     printDebuggingText();
                 }
@@ -137,9 +148,65 @@ public class PongGame extends SurfaceView implements Runnable {
     private void update() {
         // Update the bat and the ball
         mBall.update(mFPS);
+
+        // Update the bat and the ball
+        mBall.update(mFPS);
+        mBat.update(mFPS);
     }
 
     private void detectCollisions() {
+        // Has the bat hit the ball?
+        if(RectF.intersects(mBat.getRect(),mBall.getRect())) {
+
+        // Realisticish bounce
+            mBall.batBounce(mBat.getRect());
+            //mBall.increaseVelocity();
+
+            float a = mBat.getRect().left ;
+            float b = mBat.getRect().right ;
+            float c = (a-b)/4;
+            float x1 = a+c ;
+            float x2 = a+(3*c) ;
+
+            float a1 = mBall.getRect().left;
+            float b1 = mBall.getRect().right;
+            float y = (a1-b1)/2 ;
+
+
+            if(y<x2 && y>x1){
+                mScore += 200;
+            }
+            else {
+                mScore += 10;
+            }
+
+        }
+
+
+
+        // Bottom
+        if(mBall.getRect().bottom > mScreenY){
+            mBall.reverseYVelocity();
+            mLives--;
+            if(mLives == 0){
+                mPaused = true;
+                startNewGame();
+            }
+        }
+        // Top
+        if(mBall.getRect().top < 0){
+            mBall.reverseYVelocity();
+        }
+        // Left
+        if(mBall.getRect().left < 0){
+            mBall.reverseXVelocity();
+        }
+        // Right
+        if(mBall.getRect().right > mScreenX){
+            mBall.reverseXVelocity();
+            //mBall.increaseVelocity();
+            mScore-=5;
+        }
     }
 
     // This method is called by PongActivity when the player quits the game
@@ -156,6 +223,7 @@ public class PongGame extends SurfaceView implements Runnable {
 
         }
 
+
     }
 
     // This method is called by PongActivity when the player starts the game
@@ -166,5 +234,35 @@ public class PongGame extends SurfaceView implements Runnable {
         // Start the thread
         mGameThread.start();
 
+    }
+
+    // Handle all the screen touches
+    @Override
+    public boolean onTouchEvent(MotionEvent motionEvent) {
+    // This switch block replaces the if statement from the Sub Hunter game
+        switch (motionEvent.getAction() & MotionEvent.ACTION_MASK) {
+    // The player has put their finger on the screen
+            case MotionEvent.ACTION_DOWN:
+    // If the game was paused unpause
+                mPaused = false;
+    // Where did the touch happen
+                if(motionEvent.getX() > mScreenX / 2){
+    // On the right hand side
+                    mBat.setMovementState(mBat.RIGHT);
+                }
+                else{
+    // On the left hand side
+                    mBat.setMovementState(mBat.LEFT);
+                }
+                break;
+    // The player lifted their finger from anywhere on screen.
+    // It is possible to create bugs by using multiple fingers.
+            case MotionEvent.ACTION_UP:
+    // Stop the bat moving
+                mBat.setMovementState(mBat.STOPPED);
+                break;
+
+        }
+        return true;
     }
 }
